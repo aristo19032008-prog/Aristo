@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b6b4f">
+<title>Tamil Nadu Explorer</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#17332b}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;box-shadow:0 0 25px #0001;padding-bottom:78px}
+header{background:linear-gradient(135deg,#075f48,#13a06f);color:#fff;padding:24px 18px 20px;border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:27px} header p{margin:7px 0 0;opacity:.9}
+.search{margin-top:18px;background:#fff;border-radius:14px;padding:4px;display:flex;box-shadow:0 6px 18px #0002}
+.search input{width:100%;border:0;outline:0;padding:12px;font-size:16px;border-radius:12px}
+.search button{border:0;background:#075f48;color:white;border-radius:11px;padding:0 16px;font-size:18px}
+main{padding:16px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px}
+.section-title h2{font-size:19px;margin:0}
+select{padding:9px;border:1px solid #d6e1dd;border-radius:10px;background:white}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+.chips button{white-space:nowrap;border:1px solid #d8e4df;background:#fff;border-radius:20px;padding:9px 13px;color:#275449}
+.chips button.active{background:#0b6b4f;color:white;border-color:#0b6b4f}
+.status{font-size:13px;color:#60736d;margin:7px 2px 14px}
+.grid{display:grid;gap:13px}
+.card{border:1px solid #e1ebe7;border-radius:17px;overflow:hidden;background:white;box-shadow:0 3px 12px #0000000d}
+.card-top{height:115px;background:linear-gradient(135deg,#dff3eb,#a9d9c8);display:flex;align-items:flex-end;padding:12px;position:relative}
+.card-top .emoji{font-size:48px}
+.heart{position:absolute;right:10px;top:10px;border:0;background:#fff;border-radius:50%;width:38px;height:38px;font-size:20px;box-shadow:0 2px 8px #0002}
+.card-body{padding:12px}
+.card h3{margin:0 0 5px;font-size:18px}.district{font-size:13px;color:#6a7c76}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}
+.tag{font-size:11px;background:#edf6f2;color:#0b6b4f;padding:5px 8px;border-radius:8px}
+.avail{font-weight:bold;font-size:13px;color:#118357}.unavail{font-weight:bold;font-size:13px;color:#b35b35}
+.details{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+.details button{border:0;background:#0b6b4f;color:#fff;padding:8px 12px;border-radius:9px}
+.empty{text-align:center;padding:35px 15px;color:#687c75}
+.page{display:none}.page.active{display:block}
+.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:72px;background:#fff;border-top:1px solid #e5ece9;display:flex;justify-content:space-around;z-index:20}
+.navbtn{border:0;background:none;color:#687b75;font-size:11px;padding:8px 5px;min-width:62px}
+.navbtn span{display:block;font-size:22px;margin-bottom:3px}.navbtn.active{color:#0b6b4f;font-weight:bold}
+.info{background:#eef8f4;border-left:4px solid #0b6b4f;padding:12px;border-radius:10px;font-size:13px;line-height:1.5}
+.list{display:grid;gap:9px}.list-item{padding:13px;border:1px solid #e1ebe7;border-radius:13px;background:#fff}
+.list-item strong{display:block}.muted{font-size:13px;color:#70817c}
+form input,form textarea{width:100%;padding:12px;margin:6px 0;border:1px solid #d8e2df;border-radius:10px;font:inherit}
+form textarea{height:100px;resize:vertical}form button{background:#0b6b4f;color:white;border:0;padding:12px 18px;border-radius:10px}
+@media(min-width:521px){.bottom{position:fixed}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>🌴 Tamil Nadu Explorer</h1>
+  <p>Discover important places across all 38 Tamil Nadu districts</p>
+</header>
+
+<main>
+<section id="explore" class="page active">
+  <div class="section-title">
+    <h2>Explore Tamil Nadu</h2>
+    <select id="district" onchange="renderPlaces()">
+      <option value="">All districts</option>
+    </select>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="status" id="status"></div>
+  <div class="grid" id="results"></div>
+</section>
+
+<section id="stay" class="page">
+  <div class="section-title"><h2>🏨 Stay</h2></div>
+  <div class="info">Search a destination from Explore to see places with sample stay availability. Live hotel inventory can be connected later to a booking API.</div>
+  <div class="list" style="margin-top:14px" id="stayList"></div>
+</section>
+
+<section id="travel" class="page">
+  <div class="section-title"><h2>🚌 Travel</h2></div>
+  <div class="info">Travel information for each destination can be connected to live bus, train, flight and map services.</div>
+  <div class="list" style="margin-top:14px">
+    <div class="list-item"><strong>🚆 Railways</strong><span class="muted">Search trains from the nearest railway station.</span></div>
+    <div class="list-item"><strong>🚌 Bus</strong><span class="muted">Find state and private bus routes.</span></div>
+    <div class="list-item"><strong>🚕 Local travel</strong><span class="muted">Taxi, auto and local transport information.</span></div>
+  </div>
+</section>
+
+<section id="events" class="page">
+  <div class="section-title"><h2>🎉 Events</h2></div>
+  <div class="list">
+    <div class="list-item"><strong>🎊 Tamil Nadu Festivals</strong><span class="muted">Add district-wise festivals and events here.</span></div>
+    <div class="list-item"><strong>🏏 Sports & Cultural Events</strong><span class="muted">Event listings can be connected to a database.</span></div>
+  </div>
+</section>
+
+<section id="food" class="page">
+  <div class="section-title"><h2>🍴 Food</h2></div>
+  <div class="grid" id="foodList"></div>
+</section>
+
+<section id="saved" class="page">
+  <div class="section-title"><h2>❤️ Saved Places</h2></div>
+  <div class="grid" id="savedList"></div>
+</section>
+
+<section id="contact" class="page">
+  <div class="section-title"><h2>📞 Contact</h2></div>
+  <div class="info">This demo form displays a thank-you message. Connect it to a backend/email service when you want real messages to be sent.</div>
+  <form onsubmit="sendContact(event)" style="margin-top:14px">
+    <input required placeholder="Your name">
+    <input required type="email" placeholder="Email address">
+    <textarea required placeholder="Your message"></textarea>
+    <button type="submit">Send message</button>
+  </form>
+</section>
+</main>
+</div>
+
+<nav class="bottom" style="display:none">
+  <button class="navbtn active" onclick="showPage('explore',this)"><span>🧭</span>Explore</button>
+  <button class="navbtn" onclick="showPage('stay',this)"><span>🏨</span>Stay</button>
+  <button class="navbtn" onclick="showPage('travel',this)"><span>🚌</span>Travel</button>
+  <button class="navbtn" onclick="showPage('events',this)"><span>🎉</span>Events</button>
+  <button class="navbtn" onclick="showPage('food',this)"><span>🍴</span>Food</button>
+  <button class="navbtn" onclick="showPage('contact',this)"><span>☎️</span>Contact</button>
+</nav>
+
+<script>
+const districts = [
+"Chennai","Coimbatore","Cuddalore","Dharmapuri","Dindigul","Erode","Kallakurichi",
+"Kancheepuram","Karur","Krishnagiri","Madurai","Mayiladuthurai","Nagapattinam",
+"Kanniyakumari","Namakkal","Perambalur","Pudukkottai","Ramanathapuram","Ranipet",
+"Salem","Sivaganga","Tenkasi","Thanjavur","Theni","Thoothukudi","Tiruchirappalli",
+"Tirunelveli","Tirupathur","Tiruppur","Tiruvallur","Tiruvannamalai","Tiruvarur",
+"Vellore","Viluppuram","Virudhunagar","The Nilgiris","Ariyalur","Chengalpattu"
+];
+
+const places = [
+["Marina Beach","Chennai","Beach","🏖️",true],
+["Kapaleeshwarar Temple","Chennai","Temple","🛕",true],
+["Fort St. George","Chennai","Heritage","🏛️",true],
+["San Thome Basilica","Chennai","Heritage","⛪",true],
+["Guindy National Park","Chennai","Wildlife","🦌",true],
+["Government Museum Chennai","Chennai","Heritage","🏛️",true],
+["Arignar Anna Memorial","Chennai","Heritage","🏛️",true],
+["Elliot's Beach","Chennai","Beach","🌊",true],
+["Marudamalai Temple","Coimbatore","Temple","🛕",true],
+["Isha Yoga Center","Coimbatore","Heritage","🧘",true],
+["Siruvani Waterfalls","Coimbatore","Waterfall","💧",true],
+["Valparai","Coimbatore","Hill Station","🌳",true],
+["Black Thunder","Coimbatore","Adventure","🎢",true],
+["Anamalai Tiger Reserve","Coimbatore","Wildlife","🐅",true],
+["VOC Park","Coimbatore","Nature","🌳",true],
+["Gedee Car Museum","Coimbatore","Heritage","🚗",true],
+["Pichavaram Mangrove Forest","Cuddalore","Nature","🌿",true],
+["Chidambaram Nataraja Temple","Cuddalore","Temple","🛕",true],
+["Silver Beach","Cuddalore","Beach","🏖️",true],
+["Fort St. David","Cuddalore","Heritage","🏰",true],
+["Bhuvanagiri","Cuddalore","Heritage","🏛️",true],
+["Devanampattinam Beach","Cuddalore","Beach","🌊",true],
+["Hogenakkal Falls","Dharmapuri","Waterfall","💧",true],
+["Theerthamalai Temple","Dharmapuri","Temple","🛕",true],
+["Dharmapuri Forest","Dharmapuri","Nature","🌳",true],
+["Pennagaram","Dharmapuri","Nature","🌿",true],
+["Kottai Kovil","Dharmapuri","Temple","🛕",true],
+["Adhiyamankottai Fort","Dharmapuri","Heritage","🏰",true],
+["Kodaikanal","Dindigul","Hill Station","🏞️",true],
+["Kodaikanal Lake","Dindigul","Nature","🚣",true],
+["Pillar Rocks","Dindigul","Nature","⛰️",true],
+["Coaker's Walk","Dindigul","Nature","🌄",true],
+["Palani Murugan Temple","Dindigul","Temple","🛕",true],
+["Dindigul Fort","Dindigul","Heritage","🏰",true],
+["Silver Cascade Falls","Dindigul","Waterfall","💧",true],
+["Berijam Lake","Dindigul","Nature","🌲",true],
+["Bhavani Sangameshwarar Temple","Erode","Temple","🛕",true],
+["Kodiveri Dam","Erode","Nature","🌊",true],
+["Bhavanisagar Dam","Erode","Nature","🌊",true],
+["Sathyamangalam Tiger Reserve","Erode","Wildlife","🐅",true],
+["Chennimalai Murugan Temple","Erode","Temple","🛕",true],
+["Bannari Amman Temple","Erode","Temple","🛕",true],
+["Kallakurichi Hills","Kallakurichi","Nature","🌳",true],
+["Kalvarayan Hills","Kallakurichi","Hill Station","⛰️",true],
+["Gomukhi Dam","Kallakurichi","Nature","🌊",true],
+["Manimuktha Dam","Kallakurichi","Nature","🌊",true],
+["Thirukkoilur Temple","Kallakurichi","Temple","🛕",true],
+["Melmalayanur Angalamman Temple","Kallakurichi","Temple","🛕",true],
+["Kailasanathar Temple","Kancheepuram","Temple","🛕",true],
+["Ekambareswarar Temple","Kancheepuram","Temple","🛕",true],
+["Kamakshi Amman Temple","Kancheepuram","Temple","🛕",true],
+["Varadharaja Perumal Temple","Kancheepuram","Temple","🛕",true],
+["Vaikunta Perumal Temple","Kancheepuram","Temple","🛕",true],
+["Kanchi Kudil","Kancheepuram","Heritage","🏠",true],
+["Kalyana Venkattaramaswamy Temple","Karur","Temple","🛕",true],
+["Pasupatheeswarar Temple","Karur","Temple","🛕",true],
+["Mayanur Barrage","Karur","Nature","🌊",true],
+["Karur Amaravathi Dam","Karur","Nature","🌊",true],
+["Vangal Cauvery River","Karur","Nature","🌿",true],
+["Ponnaniar Dam","Karur","Nature","🌊",true],
+["Krishnagiri Dam","Krishnagiri","Nature","🌊",true],
+["Rayakottai Fort","Krishnagiri","Heritage","🏰",true],
+["Kelavarapalli Dam","Krishnagiri","Nature","🌊",true],
+["Thally Garden","Krishnagiri","Nature","🌿",true],
+["KRP Dam","Krishnagiri","Nature","🌊",true],
+["Hogenakkal Route Viewpoints","Krishnagiri","Nature","🌄",true],
+["Meenakshi Amman Temple","Madurai","Temple","🛕",true],
+["Thirumalai Nayakkar Palace","Madurai","Heritage","🏛️",true],
+["Gandhi Memorial Museum","Madurai","Heritage","🏛️",true],
+["Alagar Koyil","Madurai","Temple","🛕",true],
+["Pazhamudircholai","Madurai","Temple","🛕",true],
+["Athisayam","Madurai","Adventure","🎢",true],
+["Thirupparankundram Murugan Temple","Madurai","Temple","🛕",true],
+["Vaigai Dam","Madurai","Nature","🌊",true],
+["Mayuranathaswami Temple","Mayiladuthurai","Temple","🛕",true],
+["Tharangambadi","Mayiladuthurai","Heritage","🏖️",true],
+["Danish Fort","Mayiladuthurai","Heritage","🏰",true],
+["Poompuhar","Mayiladuthurai","Heritage","🌊",true],
+["Vaitheeswaran Koil","Mayiladuthurai","Temple","🛕",true],
+["Sirkazhi Sattainathar Temple","Mayiladuthurai","Temple","🛕",true],
+["Velankanni Basilica","Nagapattinam","Pilgrimage","⛪",true],
+["Nagore Dargah","Nagapattinam","Pilgrimage","🕌",true],
+["Nagapattinam Beach","Nagapattinam","Beach","🏖️",true],
+["Kodikkarai Wildlife Sanctuary","Nagapattinam","Wildlife","🦌",true],
+["Vedaranyam","Nagapattinam","Heritage","🏛️",true],
+["Sikkal Singaravelar Temple","Nagapattinam","Temple","🛕",true],
+["Kanyakumari Beach","Kanniyakumari","Beach","🌅",true],
+["Vivekananda Rock Memorial","Kanniyakumari","Heritage","⛵",true],
+["Thiruvalluvar Statue","Kanniyakumari","Heritage","🗿",true],
+["Kanyakumari Temple","Kanniyakumari","Temple","🛕",true],
+["Padmanabhapuram Palace","Kanniyakumari","Heritage","🏛️",true],
+["Suchindram Thanumalayan Temple","Kanniyakumari","Temple","🛕",true],
+["Mathur Aqueduct","Kanniyakumari","Heritage","🌉",true],
+["Thirparappu Waterfalls","Kanniyakumari","Waterfall","💧",true],
+["Namakkal Anjaneyar Temple","Namakkal","Temple","🛕",true],
+["Kolli Hills","Namakkal","Hill Station","⛰️",true],
+["Agaya Gangai Waterfalls","Namakkal","Waterfall","💧",true],
+["Kolli Malai","Namakkal","Nature","🌳",true],
+["Namakkal Fort","Namakkal","Heritage","🏰",true],
+["Tiruchengode Ardhanareeswarar Temple","Namakkal","Temple","🛕",true],
+["Sattanur Fossil Wood Park","Perambalur","Heritage","🦕",true],
+["Ranjankudi Fort","Perambalur","Heritage","🏰",true],
+["Chettikulam Ekambareswarar Temple","Perambalur","Temple","🛕",true],
+["Pachai Malai Hills","Perambalur","Nature","🌳",true],
+["Siruvachur Madura Kaliamman Temple","Perambalur","Temple","🛕",true],
+["Vayalur","Perambalur","Heritage","🏛️",true],
+["Thirumayam Fort","Pudukkottai","Heritage","🏰",true],
+["Sittannavasal","Pudukkottai","Heritage","🎨",true],
+["Avudaiyarkoil","Pudukkottai","Temple","🛕",true],
+["Pudukkottai Palace","Pudukkottai","Heritage","🏛️",true],
+["Kudumiyanmalai Temple","Pudukkottai","Temple","🛕",true],
+["Narthamalai","Pudukkottai","Heritage","🏛️",true],
+["Kodumbalur Moovarkoil","Pudukkottai","Heritage","🏛️",true],
+["Viralimalai Sanctuary","Pudukkottai","Wildlife","🦚",true],
+["Rameswaram Ramanathaswamy Temple","Ramanathapuram","Temple","🛕",true],
+["Dhanushkodi","Ramanathapuram","Beach","🌊",true],
+["Pamban Bridge","Ramanathapuram","Heritage","🌉",true],
+["Ariyaman Beach","Ramanathapuram","Beach","🏖️",true],
+["Dr. A.P.J. Abdul Kalam Memorial","Ramanathapuram","Heritage","🏛️",true],
+["Gulf of Mannar Marine Biosphere Reserve","Ramanathapuram","Wildlife","🐠",true],
+["Kothandaramaswamy Temple","Ramanathapuram","Temple","🛕",true],
+["Devipattinam Navapashanam","Ramanathapuram","Pilgrimage","🛕",true],
+["Arcot Fort","Ranipet","Heritage","🏰",true],
+["Sholingur Narasimha Swamy Temple","Ranipet","Temple","🛕",true],
+["Vellore Golden Temple Route","Ranipet","Temple","✨",true],
+["Delhi Gate","Ranipet","Heritage","🏛️",true],
+["Amirthi Forest Route","Ranipet","Nature","🌳",true],
+["Walajapet","Ranipet","Heritage","🏛️",true],
+["Yercaud","Salem","Hill Station","🌲",true],
+["Yercaud Lake","Salem","Nature","🚣",true],
+["Mettur Dam","Salem","Nature","🌊",true],
+["1008 Lingam Temple","Salem","Temple","🛕",true],
+["Sugavaneswarar Temple","Salem","Temple","🛕",true],
+["Sankagiri Fort","Salem","Heritage","🏰",true],
+["Kurumbapatti Zoological Park","Salem","Wildlife","🦌",true],
+["Kiliyur Falls","Salem","Waterfall","💧",true],
+["Chettinad","Sivaganga","Heritage","🏠",true],
+["Karaikudi","Sivaganga","Food & Heritage","🍛",true],
+["Chettinad Mansions","Sivaganga","Heritage","🏛️",true],
+["Pillayarpatti Karpaga Vinayagar Temple","Sivaganga","Temple","🛕",true],
+["Kundrakudi Murugan Temple","Sivaganga","Temple","🛕",true],
+["Kaalaiyar Kovil","Sivaganga","Temple","🛕",true],
+["Courtallam Main Falls","Tenkasi","Waterfall","💦",true],
+["Old Courtallam Falls","Tenkasi","Waterfall","💦",true],
+["Five Falls","Tenkasi","Waterfall","💧",true],
+["Papanasam Route","Tenkasi","Nature","🌿",true],
+["Sankaranarayanar Temple","Tenkasi","Temple","🛕",true],
+["Kasi Viswanathar Temple Tenkasi","Tenkasi","Temple","🛕",true],
+["Kutralam Eco Park","Tenkasi","Nature","🌳",true],
+["Brihadeeswarar Temple","Thanjavur","Heritage","🛕",true],
+["Thanjavur Palace","Thanjavur","Heritage","🏛️",true],
+["Saraswathi Mahal Library","Thanjavur","Heritage","📚",true],
+["Thanjavur Art Gallery","Thanjavur","Heritage","🎨",true],
+["Gangaikonda Cholapuram","Thanjavur","Heritage","🏛️",true],
+["Kumbakonam","Thanjavur","Temple","🛕",true],
+["Darasuram Airavatesvara Temple","Thanjavur","Heritage","🛕",true],
+["Swamimalai Temple","Thanjavur","Temple","🛕",true],
+["Meghamalai","Theni","Hill Station","⛰️",true],
+["Suruli Falls","Theni","Waterfall","💧",true],
+["Vaigai Dam","Theni","Nature","🌊",true],
+["Kumbakkarai Falls","Theni","Waterfall","💦",true],
+["Sothuparai Dam","Theni","Nature","🌊",true],
+["Mangaladevi Kannagi Temple","Theni","Temple","🛕",true],
+["Thiruchendur Murugan Temple","Thoothukudi","Temple","🛕",true],
+["Thoothukudi Beach","Thoothukudi","Beach","🏖️",true],
+["Manapad Beach","Thoothukudi","Beach","🌊",true],
+["Kazhugumalai","Thoothukudi","Heritage","🏛️",true],
+["Panchalankurichi Kattabomman Memorial Fort","Thoothukudi","Heritage","🏰",true],
+["Mannar Marine Biosphere Reserve","Thoothukudi","Wildlife","🐠",true],
+["Rockfort Ucchi Pillayar Temple","Tiruchirappalli","Heritage","⛰️",true],
+["Sri Ranganathaswamy Temple","Tiruchirappalli","Temple","🛕",true],
+["Jambukeswarar Temple","Tiruchirappalli","Temple","🛕",true],
+["Samayapuram Mariamman Temple","Tiruchirappalli","Temple","🛕",true],
+["Mukkombu","Tiruchirappalli","Nature","🌊",true],
+["Kallanai Grand Anicut","Tiruchirappalli","Heritage","🌉",true],
+["St. Joseph's Church","Tiruchirappalli","Heritage","⛪",true],
+["Government Museum Tiruchirappalli","Tiruchirappalli","Heritage","🏛️",true],
+["Nellaiappar Temple","Tirunelveli","Temple","🛕",true],
+["Agasthiyar Falls","Tirunelveli","Waterfall","💧",true],
+["Manimuthar Falls","Tirunelveli","Waterfall","💦",true],
+["Papanasam","Tirunelveli","Nature","🌿",true],
+["Manimuthar Dam","Tirunelveli","Nature","🌊",true],
+["Mundanthurai Tiger Reserve","Tirunelveli","Wildlife","🐅",true],
+["Kalakkad-Mundanthurai Tiger Reserve","Tirunelveli","Wildlife","🐅",true],
+["Courtallam Route","Tirunelveli","Nature","🌳",true],
+["Yelagiri Hills","Tirupathur","Hill Station","🌄",true],
+["Jalagamparai Waterfalls","Tirupathur","Waterfall","💧",true],
+["Punganoor Lake","Tirupathur","Nature","🚣",true],
+["Velavan Temple Yelagiri","Tirupathur","Temple","🛕",true],
+["Swamimalai Hills","Tirupathur","Nature","⛰️",true],
+["Vainu Bappu Observatory","Tirupathur","Heritage","🔭",true],
+["Avinashi Lingeswarar Temple","Tiruppur","Temple","🛕",true],
+["Amaravathi Dam Route","Tiruppur","Nature","🌊",true],
+["Tiruppur Kumaran Memorial","Tiruppur","Heritage","🏛️",true],
+["Noyyal River","Tiruppur","Nature","🌿",true],
+["Uthukuli Murugan Temple","Tiruppur","Temple","🛕",true],
+["Sivanmalai Temple","Tiruppur","Temple","🛕",true],
+["Pulicat Lake","Tiruvallur","Nature","🦩",true],
+["Poondi Reservoir","Tiruvallur","Nature","🌊",true],
+["Veeraraghava Perumal Temple","Tiruvallur","Temple","🛕",true],
+["Pulicat Bird Sanctuary","Tiruvallur","Wildlife","🦩",true],
+["Tiruttani Murugan Temple","Tiruvallur","Temple","🛕",true],
+["Pazhaverkadu","Tiruvallur","Heritage","🏘️",true],
+["Arunachaleswarar Temple","Tiruvannamalai","Temple","🛕",true],
+["Annamalai Hill","Tiruvannamalai","Nature","⛰️",true],
+["Ramana Maharshi Ashram","Tiruvannamalai","Heritage","🧘",true],
+["Gingee Fort","Tiruvannamalai","Heritage","🏰",true],
+["Javadi Hills","Tiruvannamalai","Nature","🌳",true],
+["Sathanur Dam","Tiruvannamalai","Nature","🌊",true],
+["Sri Ramana Ashram","Tiruvannamalai","Pilgrimage","🧘",true],
+["Tiruvarur Thyagaraja Temple","Tiruvarur","Temple","🛕",true],
+["Muthupet Mangrove Forest","Tiruvarur","Nature","🌿",true],
+["Mannargudi Rajagopalaswamy Temple","Tiruvarur","Temple","🛕",true],
+["Koothanallur Mosque","Tiruvarur","Heritage","🕌",true],
+["Muthupet Lagoon","Tiruvarur","Nature","🌊",true],
+["Sivan Temple Thirukkannamangai","Tiruvarur","Temple","🛕",true],
+["Vellore Fort","Vellore","Heritage","🏰",true],
+["Sripuram Golden Temple","Vellore","Temple","✨",true],
+["Vainu Bappu Observatory Route","Vellore","Heritage","🔭",true],
+["Jalakandeswarar Temple","Vellore","Temple","🛕",true],
+["Amirthi Zoological Park","Vellore","Wildlife","🦌",true],
+["Christian Medical College Heritage Area","Vellore","Heritage","🏛️",true],
+["Gingee Fort","Viluppuram","Heritage","🏰",true],
+["Melmalayanur Temple","Viluppuram","Temple","🛕",true],
+["Auroville Route","Viluppuram","Nature","🌿",true],
+["Marakkanam Salt Pans","Viluppuram","Nature","🌊",true],
+["Thiruvakkarai Fossil Wood Park","Viluppuram","Heritage","🦕",true],
+["Veedur Dam","Viluppuram","Nature","🌊",true],
+["Srivilliputhur Andal Temple","Virudhunagar","Temple","🛕",true],
+["Srivilliputhur Wildlife Sanctuary","Virudhunagar","Wildlife","🦌",true],
+["Shenbaga Thoppu","Virudhunagar","Nature","🌳",true],
+["Sathuragiri Hills","Virudhunagar","Hill Station","⛰️",true],
+["Kamaraj Memorial House","Virudhunagar","Heritage","🏛️",true],
+["Ayyanar Falls","Virudhunagar","Waterfall","💧",true],
+["Ooty","The Nilgiris","Hill Station","🏔️",true],
+["Coonoor","The Nilgiris","Hill Station","🌿",true],
+["Doddabetta Peak","The Nilgiris","Nature","⛰️",true],
+["Ooty Lake","The Nilgiris","Nature","🚣",true],
+["Nilgiri Mountain Railway","The Nilgiris","Heritage","🚂",true],
+["Mudumalai Tiger Reserve","The Nilgiris","Wildlife","🐘",true],
+["Mukurthi National Park","The Nilgiris","Wildlife","🦌",true],
+["Pykara Falls","The Nilgiris","Waterfall","💧",true],
+["Pykara Lake","The Nilgiris","Nature","🌊",true],
+["Avalanche Lake","The Nilgiris","Nature","🏞️",true],
+["Gangaikonda Cholapuram","Ariyalur","Heritage","🏛️",true],
+["Ariyalur Fossil Park","Ariyalur","Heritage","🦕",true],
+["Karaivetti Bird Sanctuary","Ariyalur","Wildlife","🦩",true],
+["Sittannavasal Route","Ariyalur","Heritage","🎨",true],
+["Elakurichi Adaikala Matha Church","Ariyalur","Heritage","⛪",true],
+["Kallankurichi Kaliyuga Varadaraja Perumal Temple","Ariyalur","Temple","🛕",true],
+["Mahabalipuram Shore Temples","Chengalpattu","Heritage","🏛️",true],
+["Pancha Rathas","Chengalpattu","Heritage","🏛️",true],
+["Arjuna's Penance","Chengalpattu","Heritage","🎨",true],
+["Kovalam Beach","Chengalpattu","Beach","🌊",true],
+["Vedanthangal Bird Sanctuary","Chengalpattu","Wildlife","🦩",true],
+["Madurantakam Lake","Chengalpattu","Nature","🌊",true],
+["Crocodile Bank","Chengalpattu","Wildlife","🐊",true],
+["Thirukalukundram Vedagiriswarar Temple","Chengalpattu","Temple","🛕",true]
+];
+
+const categories=["All","Beach","Hill Station","Temple","Heritage","Nature","Waterfall","Wildlife","Adventure","Pilgrimage","Food & Heritage"];
+let category="All", saved=JSON.parse(localStorage.getItem("tnSaved")||"[]");
+
+const districtEl=document.getElementById("district");
+districts.sort().forEach(d=>districtEl.innerHTML+=`<option>${d}</option>`);
+
+const chips=document.getElementById("chips");
+categories.forEach(c=>{let b=document.createElement("button");b.textContent=c;b.className=c==="All"?"active":"";b.onclick=()=>{category=c;document.querySelectorAll("#chips button").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderPlaces()};chips.appendChild(b)});
+
+function getFiltered(){
+ let q="", d=districtEl.value;
+ return places.filter(p=>(!q||p[0].toLowerCase().includes(q)||p[1].toLowerCase().includes(q)||p[2].toLowerCase().includes(q))&&(!d||p[1]===d)&&(category==="All"||p[2]===category));
+}
+function renderPlaces(){
+ let arr=getFiltered(), box=document.getElementById("results");
+ document.getElementById("status").textContent=arr.length?`${arr.length} place(s) found • Availability shown is demo data`:"No matching places found.";
+ box.innerHTML=arr.map(card).join("");
+}
+function card(p){
+ let isSaved=saved.includes(p[0]);
+ return `<article class="card"><div class="card-top"><div class="emoji">${p[3]}</div><button class="heart" onclick="toggleSave('${p[0].replace(/'/g,"\\'")}')">${isSaved?"❤️":"♡"}</button></div><div class="card-body"><h3>${p[0]}</h3><div class="district">📍 ${p[1]}</div><div class="tags"><span class="tag">${p[2]}</span><span class="tag">${p[4]?"Open / Available":"Currently unavailable"}</span></div><div class="details"><span class="${p[4]?"avail":"unavail"}">${p[4]?"● Available":"● Not available"}</span><button onclick="showDetails('${p[0].replace(/'/g,"\\'")}')">Details</button></div></div></article>`;
+}
+function toggleSave(name){
+ if(saved.includes(name)) saved=saved.filter(x=>x!==name); else saved.push(name);
+ localStorage.setItem("tnSaved",JSON.stringify(saved));renderPlaces();renderSaved();
+}
+function renderSaved(){
+ let arr=places.filter(p=>saved.includes(p[0])), box=document.getElementById("savedList");
+ box.innerHTML=arr.length?arr.map(card).join(""):`<div class="empty">❤️<br><br>You have no saved places yet.<br>Tap ♡ on a place to save it.</div>`;
+}
+function showDetails(name){
+ let p=places.find(x=>x[0]===name);
+ alert(`${p[0]}\nDistrict: ${p[1]}\nType: ${p[2]}\nAvailability: ${p[4]?"Available":"Currently unavailable"}\n\nThis is demo availability data. Connect a live database/API for real-time availability.`);
+}
+
+function showPage(id,btn){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll(".navbtn").forEach(b=>b.classList.remove("active"));
+ btn.classList.add("active");
+ if(id==="saved")renderSaved();
+ if(id==="stay")renderStay();
+ if(id==="food")renderFood();
+ window.scrollTo(0,0);
+}
+function renderStay(){
+ document.getElementById("stayList").innerHTML=places.slice(0,12).map(p=>`<div class="list-item"><strong>🏨 ${p[0]} — ${p[1]}</strong><span class="muted">${p[4]?"Stay availability: Available":"Stay availability: Check later"}</span></div>`).join("");
+}
+function renderFood(){
+ let foods=[["🍛","Chettinad cuisine","Sivaganga"],["🥘","Madurai Jigarthanda & local food","Madurai"],["🍚","Thanjavur traditional meals","Thanjavur"],["🥞","Kanyakumari seafood & local dishes","Kanniyakumari"],["☕","Nilgiris tea","The Nilgiris"],["🍲","Kongu cuisine","Coimbatore"]];
+ document.getElementById("foodList").innerHTML=foods.map(f=>`<article class="card"><div class="card-body"><div style="font-size:35px">${f[0]}</div><h3>${f[1]}</h3><div class="district">📍 ${f[2]}</div></div></article>`).join("");
+}
+function sendContact(e){e.preventDefault();alert("Thank you! Your message was received by this demo website.");e.target.reset()}
+renderPlaces();renderSaved();
+</script>
+</body>
+</html>
